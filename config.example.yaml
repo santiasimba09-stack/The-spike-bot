@@ -1,0 +1,92 @@
+window:
+  title_contains: The Spike
+  process_name: ''
+  require_foreground: true
+  allow_monitor_fallback: false
+  fallback_monitor: 1
+limits:
+  max_runs: 10
+  max_matches: 0
+  max_minutes: 0.0
+  stop_at: ''
+  max_consecutive_losses: 3
+  finish_current_run: true
+tournament:
+  tier: keep
+  auto_claim: true
+  reset_after_win: true
+  reset_after_loss: true
+  matches_per_tournament: 3
+  continue_key: space
+  skip_cutscenes: true
+safety:
+  stuck_timeout_s: 120.0
+  on_stuck: stop
+  max_match_minutes: 25.0
+  stop_on_danger: true
+  save_debug_screenshots: true
+  verify_before_click: true
+humanize:
+  delay_min_s: 0.4
+  delay_max_s: 1.5
+  click_jitter: 0.3
+  move_min_s: 0.12
+  move_max_s: 0.35
+  curved_moves: true
+  press_min_s: 0.04
+  press_max_s: 0.11
+hotkeys:
+  stop: f8
+  pause: f7
+  screenshot: f9
+matching:
+  default_threshold: 0.82
+  poll_interval_s: 0.35
+  scales:
+  - 1.0
+  match_end_grace_s: 3.0
+keys:
+  left: left
+  right: right
+  jump_spike: z
+  bump: space
+  block: x
+  slide: c
+  serve: z
+gameplay:
+  enabled: true
+  our_side: left
+  receive_zone_px: 450
+  move_tolerance_px: 14
+  bump_lead_ms: 170
+  bump_distance_px: 70
+  bump_cooldown_ms: 700
+  attack_enabled: true
+  spike_ring_offset_px: -25
+  jump_lead_ms: 430
+  jump_delay_ms: 300
+  spike_delay_ms: 280
+  spike_ring_radius_frac: 0.55
+  serve_enabled: true
+  serve_hold_ms: 0
+  serve_second_press_ms: 650
+  serve_idle_s: 3.0
+  block_enabled: false
+  analysis_width: 960
+  max_fps: 60
+  marker_hsv_low:
+  - 92
+  - 60
+  - 200
+  marker_hsv_high:
+  - 110
+  - 150
+  - 255
+  debug_overlay: false
+  record_frames: false
+  record_every_n: 3
+  record_max_frames: 3000
+templates_dir: templates
+flow_file: flow.yaml
+log_dir: logs
+dry_run: false

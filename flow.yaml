@@ -1,0 +1,143 @@
+# Tournament flow for The Spike Cross (offline Tournament mode).
+#
+# Every poll the bot takes a screenshot of the game window and walks these rules
+# from top to bottom. The FIRST rule whose conditions hold is executed.
+#
+# Screen sequence this flow is built for (from research on the v8 PC build):
+#   Home --[Match]--> Match menu --[Tournament]--> Bracket
+#   Bracket --[Prepare for Match]--> Team screen --[Start Game]--> MATCH
+#   MATCH ends -> rewards ("SPACE Continue") -> result stats (WIN!/LOSE) -> Bracket
+#   ...3 wins (quarterfinal, semifinal, final) -> "Tournament Winner!" -> Bracket
+#   Bracket --[reset (circular arrows)]--> Tier popup --[Confirm]--> fresh Bracket
+#
+# Rule fields
+#   name        unique name (shown in the UI/log)
+#   when        templates that must ALL be visible
+#   any         at least ONE of these must be visible
+#   unless      NONE of these may be visible
+#   if_flags    flags that must be set ("!flag" = must NOT be set)
+#   if_option   config options that must be true ("!x.y" = must be false)
+#   action      click | key | play | stop | wait | none | steps
+#                 click: click `target` (default: first visible template of when/any);
+#                        if the target isn't visible, press `key` instead (if set)
+#                 key:   press `key`; if `key` is empty, click the template instead
+#                 play:  hand over to the gameplay agent until the match ends
+#                 stop:  stop the bot immediately (safety)
+#                 steps: run `steps` in order: {click: tpl, key: k, optional: bool, wait_s: s}
+#   event       match_started | match_won | match_lost | tournament_won (counted once per screen)
+#   set_flags / clear_flags   flags used to remember state between screens
+#   cooldown_s  minimum seconds between two firings of the rule (default 1.5)
+#   settle_s    seconds to wait after the action (default 0.8)
+#   enabled     false = ignore the rule
+#
+# Placeholders: {tier} -> tournament.tier from the config, {continue_key} -> tournament.continue_key
+# Templates that are not captured yet are treated as "not visible", so rules
+# that depend on them never fire (the UI lists them under Templates).
+
+rules:
+  # ---- 1. Safety: never interact with shop / purchase / premium-currency dialogs.
+  - name: danger
+    any: [danger_purchase, danger_shop, danger_recharge, danger_premium_confirm]
+    if_option: [safety.stop_on_danger]
+    action: stop
+
+  # ---- 2. In a match: hand over to the gameplay agent.
+  - name: in_match
+    when: [hud_pause]
+    action: play
+    cooldown_s: 0
+    settle_s: 0
+
+  # ---- 3. After the match.
+  - name: result_win
+    when: [result_win]
+    event: [match_won]
+    action: click
+    target: result_next
+    key: "{continue_key}"
+    settle_s: 1.5
+
+  - name: result_lose
+    when: [result_lose]
+    event: [match_lost]
+    action: click
+    target: result_next
+    key: "{continue_key}"
+    settle_s: 1.5
+
+  # The trophy screen's bottom button is "Recharge" (may cost premium currency):
+  # never click it - press the continue key (or click `winner_close` if you
+  # captured a back/close button for this screen).
+  - name: tournament_winner
+    when: [tournament_winner]
+    event: [tournament_won]
+    action: click
+    target: winner_close
+    key: "{continue_key}"
+    settle_s: 1.5
+
+  - name: continue_prompt
+    when: [continue_prompt]
+    action: key
+    key: "{continue_key}"
+    settle_s: 1.0
+
+  - name: claim_reward
+    when: [claim_reward]
+    if_option: [tournament.auto_claim]
+    action: click
+    settle_s: 1.2
+
+  - name: popup_ok
+    any: [popup_ok, popup_close]
+    action: click
+
+  - name: skip
+    when: [skip]
+    if_option: [tournament.skip_cutscenes]
+    action: click
+
+  - name: retry
+    when: [retry]
+    action: click
+    clear_flags: [needs_reset]
+    settle_s: 1.5
+
+  # ---- 4. Tournament reset -> tier popup.
+  - name: tier_select
+    when: [tier_confirm]
+    steps:
+      - {click: "tier_{tier}", optional: true, wait_s: 0.4}
+      - {click: tier_confirm}
+    clear_flags: [needs_reset]
+    settle_s: 1.5
+
+  - name: reset_tournament
+    when: [bracket_reset]
+    if_flags: [needs_reset]
+    action: click
+    settle_s: 1.2
+
+  # ---- 5. Before the match.
+  - name: start_game
+    when: [start_game]
+    event: [match_started]
+    action: click
+    settle_s: 2.0
+
+  - name: prepare_for_match
+    when: [prepare_for_match]
+    if_flags: ["!needs_reset"]
+    action: click
+    settle_s: 1.5
+
+  # ---- 6. Navigation from the home screen.
+  - name: open_tournament
+    when: [mode_tournament]
+    action: click
+    settle_s: 1.5
+
+  - name: open_match_menu
+    when: [home_match]
+    action: click
+    settle_s: 1.5
