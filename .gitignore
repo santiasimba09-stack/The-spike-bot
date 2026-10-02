@@ -216,3 +216,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# The Spike bot – local/runtime files
+config.yaml
+logs/
+captures/
+recordings/
